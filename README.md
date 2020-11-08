@@ -33,6 +33,11 @@ Default server will start at PORT = 8000 , you can change that by passing port n
 obj.start_fileShare("C:/Users/UserName/Desktop" , 5000)
 ```
 
+Default server will not log anything , if you want the log to output on console then make logToConsole = True
+```python
+obj.start_fileShare("C:/Users/UserName/Desktop" , 5000 , logToConsole = True)
+```
+
 ##### Port Number must be a four digit integer
 
 To stop the server - press CTRL + C
