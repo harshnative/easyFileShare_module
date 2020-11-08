@@ -7,10 +7,6 @@ from os import path
 import multiprocessing
 
 
-class quietServer(http.server.SimpleHTTPRequestHandler):
-    def log_message(self, format, *args):
-        pass
-
 
 # main module class 
 class FileShareClass:
@@ -20,7 +16,6 @@ class FileShareClass:
         self.ipAddress = None
         self.port = 8000
         self.folderToShare = None
-        self.logToConsole = False
         self.mulProcess = multiprocessing.Process(target=self.startServerAtFolderSetted)
 
     # method to set the custom port number
@@ -66,28 +61,24 @@ class FileShareClass:
 
         web_dir = os.path.join(self.folderToShare)
         os.chdir(web_dir)
-        
-        if(not(self.logToConsole)):
-            with socketserver.TCPServer(("", self.port), quietServer) as httpd:
-                httpd.serve_forever()
 
-        else:
-            Handler = http.server.SimpleHTTPRequestHandler
-            httpd = socketserver.TCPServer(("", self.port), Handler)
+        Handler = http.server.SimpleHTTPRequestHandler
+        httpd = socketserver.TCPServer(("", self.port), Handler)
 
+        try:
             httpd.serve_forever()
-
-
+        except KeyboardInterrupt:
+            return 
     
     # function ot operate the class methods
-    def start_fileShare(self , folderToShare , port = 8000 , logToConsole = False):
+    def start_fileShare(self , folderToShare , port = 8000):
         self.setSharePath(folderToShare)
         self.setPort(port)
         self.ipAddress = self.get_ip_address()
-        self.logToConsole = logToConsole
 
         toReturn = []
 
+        toReturn.append("Starting file share ...")
         toReturn.append("Visit http://{}:{} to browse or download the files".format(self.ipAddress , self.port))
         toReturn.append("Files only available to devices present in the same network connection")
 
@@ -103,9 +94,9 @@ class FileShareClass:
 # for testing purpose
 if __name__ == "__main__":
     pass
-    # fil = FileShareClass()
-    # print(fil.start_fileShare("C:/users/harsh/desktop"))
+    fil = FileShareClass()
+    print(fil.start_fileShare("C:/users/harsh/desktop"))
 
-    # import time
-    # time.sleep(60)
-    # fil.stopFileShare()
+    import time
+    time.sleep(60)
+    fil.stopFileShare()
