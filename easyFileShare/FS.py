@@ -10,8 +10,6 @@ import logging
 from pyftpdlib.log import config_logging
 
 
-
-
 from pyftpdlib import servers
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.authorizers import DummyAuthorizer
@@ -103,8 +101,8 @@ class FileShareClass:
 
         # Define a new user having full r/w permissions and a read-only
         # anonymous user
-        authorizer.add_user('user', '225588', '.', perm='elradfmwMT')
-        authorizer.add_anonymous(os.getcwd())
+        authorizer.add_user('user', '225588', self.folderToShare , perm='elradfmwMT')
+        authorizer.add_anonymous(homedir=self.folderToShare)
 
         # Instantiate FTP handler class
         handler = FTPHandler
@@ -152,12 +150,12 @@ class FileShareClass:
             self.mulProcess2.terminate()
         
 
-# for testing purpose
-if __name__ == "__main__":
-    pass
-    fil = FileShareClass()
-    print(fil.start_fileShare("C:/users/harsh/desktop" , http = False))
+# # for testing purpose
+# if __name__ == "__main__":
+#     pass
+#     fil = FileShareClass()
+#     print(fil.start_fileShare("C:/users/harsh/desktop" , http = False))
 
-    import time
-    time.sleep(60)
-    fil.stopFileShare()
+#     import time
+#     time.sleep(60)
+#     fil.stopFileShare()
