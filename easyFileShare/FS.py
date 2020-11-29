@@ -6,6 +6,20 @@ import socket
 from os import path
 import multiprocessing
 
+import logging
+from pyftpdlib.log import config_logging
+
+
+
+
+from pyftpdlib import servers
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.authorizers import DummyAuthorizer
+
+
+class quietServer(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass
 
 
 # main module class 
@@ -16,7 +30,10 @@ class FileShareClass:
         self.ipAddress = None
         self.port = 8000
         self.folderToShare = None
-        self.mulProcess = multiprocessing.Process(target=self.startServerAtFolderSetted)
+        self.mulProcess1 = multiprocessing.Process(target=self.startServerAtFolderSettedHTTP)
+        self.mulProcess2 = multiprocessing.Process(target=self.startServerAtFolderSettedFTP)
+        self.http = False
+        self.logToConsole = False
 
     # method to set the custom port number
     # raises exception if not a four digit integer
@@ -53,7 +70,7 @@ class FileShareClass:
         return s.getsockname()[0]
 
     # function to start the python http server
-    def startServerAtFolderSetted(self):
+    def startServerAtFolderSettedHTTP(self):
         if(self.ipAddress == None):
             raise Exception("Could not get system IP Address")
         if(self.folderToShare == None):
@@ -61,41 +78,85 @@ class FileShareClass:
 
         web_dir = os.path.join(self.folderToShare)
         os.chdir(web_dir)
+        
+        if(not(self.logToConsole)):
+            with socketserver.TCPServer(("", self.port), quietServer) as httpd:
+                httpd.serve_forever()
 
-        Handler = http.server.SimpleHTTPRequestHandler
-        httpd = socketserver.TCPServer(("", self.port), Handler)
+        else:
+            Handler = http.server.SimpleHTTPRequestHandler
+            httpd = socketserver.TCPServer(("", self.port), Handler)
 
-        try:
             httpd.serve_forever()
-        except KeyboardInterrupt:
-            return 
+
+
+    # function to start the python http server
+    def startServerAtFolderSettedFTP(self):
+        if(self.ipAddress == None):
+            raise Exception("Could not get system IP Address")
+        if(self.folderToShare == None):
+            raise Exception("path to folder to share is not setted")    
+
+
+        # Instantiate a dummy authorizer for managing 'virtual' users
+        authorizer = DummyAuthorizer()
+
+        # Define a new user having full r/w permissions and a read-only
+        # anonymous user
+        authorizer.add_user('user', '225588', '.', perm='elradfmwMT')
+        authorizer.add_anonymous(os.getcwd())
+
+        # Instantiate FTP handler class
+        handler = FTPHandler
+        handler.authorizer = authorizer
+
+        if(not(self.logToConsole)):
+            config_logging(level=logging.ERROR)
+
+        # Define a customized banner (string returned when client connects)
+        handler.banner = "pyftpdlib based ftpd ready."
+        address = (self.ipAddress, self.port)  # listen on every IP on my machine on port 21
+        server = servers.FTPServer(address, handler)
+        server.serve_forever()
+ 
     
-    # function ot operate the class methods
-    def start_fileShare(self , folderToShare , port = 8000):
+    # function to operate the class methods
+    def start_fileShare(self , folderToShare , port = 8000 , http = False , logToConsole = False):
         self.setSharePath(folderToShare)
         self.setPort(port)
         self.ipAddress = self.get_ip_address()
+        self.http = http
+        self.logToConsole = logToConsole
 
         toReturn = []
 
-        toReturn.append("Starting file share ...")
-        toReturn.append("Visit http://{}:{} to browse or download the files".format(self.ipAddress , self.port))
-        toReturn.append("Files only available to devices present in the same network connection")
+        if(self.http):
+            toReturn.append("Visit http://{}:{} in browse to download files".format(self.ipAddress , self.port))
+            toReturn.append("Files only available to devices connected to the same network")
 
-        self.mulProcess.start()
+            self.mulProcess1.start()
+
+        else:
+            toReturn.append("Visit ftp://{}:{} in file explorer or FTP browse to download files".format(self.ipAddress , self.port))
+            toReturn.append("For Uploading as well Visit ftp://user:225588@{}:{} in same".format(self.ipAddress , self.port))
+            toReturn.append("Files only available to devices connected to the same network")
+            self.mulProcess2.start()
 
         return toReturn
 
     # method to stop file share
     def stopFileShare(self):
-        self.mulProcess.terminate()
+        if(self.http):
+            self.mulProcess1.terminate()
+        else:
+            self.mulProcess2.terminate()
         
 
 # for testing purpose
 if __name__ == "__main__":
     pass
     fil = FileShareClass()
-    print(fil.start_fileShare("C:/users/harsh/desktop"))
+    print(fil.start_fileShare("C:/users/harsh/desktop" , http = False))
 
     import time
     time.sleep(60)
