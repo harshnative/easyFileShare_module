@@ -150,12 +150,12 @@ class FileShareClass:
             self.mulProcess2.terminate()
         
 
-# # for testing purpose
-# if __name__ == "__main__":
-#     pass
-#     fil = FileShareClass()
-#     print(fil.start_fileShare("C:/users/harsh/desktop" , http = False))
+# for testing purpose
+if __name__ == "__main__":
+    pass
+    fil = FileShareClass()
+    print(fil.start_fileShare("C:/users/harsh/desktop" , http = True))
 
-#     import time
-#     time.sleep(60)
-#     fil.stopFileShare()
+    import time
+    time.sleep(60)
+    fil.stopFileShare()
